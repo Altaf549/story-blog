@@ -17,8 +17,10 @@
 /public/hot
 /public/storage
 /storage/*.key
-/storage/pail
 /vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
+docker-compose.override.yml
+npm-debug.log
+yarn-error.log

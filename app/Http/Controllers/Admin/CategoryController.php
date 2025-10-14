@@ -56,7 +56,7 @@ class CategoryController extends Controller
         $category->is_active = $request->is_active ?? true;
         $category->save();
 
-        return response()->json(['success' => 'Category saved successfully.']);
+        return response()->json(['message' => 'Category saved successfully.']);
     }
 
     /**
@@ -66,6 +66,27 @@ class CategoryController extends Controller
     {
         $category = Category::findOrFail($id);
         return response()->json($category);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, $id)
+    {
+        $category = Category::findOrFail($id);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'is_active' => 'required|boolean',
+        ]);
+
+        $category->name = $validated['name'];
+        $category->description = $validated['description'] ?? null;
+        $category->is_active = $validated['is_active'];
+        $category->save();
+
+        return response()->json(['message' => 'Category updated successfully']);
     }
 
     /**

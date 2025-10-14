@@ -35,3 +35,6 @@ Route::prefix('admin')->group(function () {
 // Redirect /admin to /admin/dashboard if authenticated, otherwise to login
 Route::redirect('/admin', '/admin/dashboard')->middleware('auth');
 Route::redirect('/admin', '/admin/login')->middleware('guest');
+
+// Duplicate of admin group resource; removing to prevent route conflicts
+// (index, store, edit, update, destroy are already defined under the auth-protected admin prefix)

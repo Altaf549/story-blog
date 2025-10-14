@@ -97,6 +97,7 @@ $(function() {
     var table = $('#categories-table').DataTable({
         processing: true,
         serverSide: true,
+        rowId: 'id',
         ajax: {
             url: "{{ route('admin.categories.index') }}",
             type: 'GET',
@@ -123,34 +124,34 @@ $(function() {
         autoWidth: false
     });
 
-    // Reset form and open modal for adding new category
-    $('#categoryModal').on('show.bs.modal', function (e) {
-        $('#categoryForm')[0].reset();
+    // Reset form specifically when clicking the Add button to avoid overriding edit state
+    $(document).on('click', '[data-bs-target="#categoryModal"][data-bs-toggle="modal"]', function () {
+        var form = $('#categoryForm');
+        form[0].reset();
         $('#categoryId').val('');
         $('#modalTitle').text('Add New Category');
+        form.attr('action', "{{ route('admin.categories.store') }}");
+        form.attr('method', 'POST');
+        $('#method-field').remove(); // Remove method spoofing for add
     });
 
     // Edit category
     $('body').on('click', '.edit', function(e) {
         e.preventDefault();
         var id = $(this).data('id');
-        
         $('#modalTitle').text('Edit Category');
         $('#categoryModal').modal('show');
-        
         $.ajax({
             url: "{{ url('admin/categories') }}/" + id + "/edit",
             type: 'GET',
             success: function(data) {
-                // Set form action for update
-                $('#categoryForm').attr('action', "{{ url('admin/categories') }}/" + id);
-                $('#categoryForm').attr('method', 'POST');
-                
+                var form = $('#categoryForm');
+                form.attr('action', "{{ url('admin/categories') }}/" + id);
+                form.attr('method', 'POST');
+                // Remove any previous method spoofing
+                $('#method-field').remove();
                 // Add method spoofing for PUT request
-                if ($('#method-field').length === 0) {
-                    $('#categoryForm').prepend('<input type="hidden" name="_method" value="PUT" id="method-field">');
-                }
-                
+                form.prepend('<input type="hidden" name="_method" value="PUT" id="method-field">');
                 // Set form data
                 $('#categoryId').val(id);
                 $('#name').val(data.name);
@@ -170,7 +171,7 @@ $(function() {
         var form = $('#categoryForm');
         form.attr('action', "{{ route('admin.categories.store') }}");
         form.attr('method', 'POST');
-        $('#method-field').remove();
+        $('#method-field').remove(); // Remove method spoofing for add
         form[0].reset();
         $('#categoryId').val('');
         $('#modalTitle').text('Add New Category');
@@ -182,28 +183,63 @@ $(function() {
     // Submit form
     $('#categoryForm').on('submit', function(e) {
         e.preventDefault();
-        
         var form = $(this);
+
+        // Ensure is_active is always present in the form data
+        if (!$('#is_active').is(':checked')) {
+            // If unchecked, add a hidden field with value 0 (avoid duplicates)
+            if ($('#categoryForm .is_active_hidden').length === 0) {
+                $('#categoryForm').append('<input type="hidden" name="is_active" value="0" class="is_active_hidden">');
+            }
+        } else {
+            // Remove hidden field if checked
+            $('#categoryForm .is_active_hidden').remove();
+        }
+
         var url = form.attr('action') || "{{ route('admin.categories.store') }}";
         var method = form.find('input[name="_method"]').val() || 'POST';
-        
+
+        // Debug log for troubleshooting
+        console.log('Form submit:', { url: url, method: method });
+
         // Clear previous errors
         form.find('.is-invalid').removeClass('is-invalid');
         form.find('.invalid-feedback').remove();
-        
+
+        var formData = new FormData(this);
+
         $.ajax({
             url: url,
-            type: 'POST',
-            data: new FormData(this),
+            type: 'POST', // Always POST, Laravel will use _method for PUT
+            data: formData,
             processData: false,
             contentType: false,
             success: function(response) {
                 $('#categoryModal').modal('hide');
                 form[0].reset();
-                toastr.success(response.message || 'Category saved successfully');
                 table.ajax.reload();
+                toastr.success((response && (response.message || response.success)) || 'Category saved successfully');
+                var isEdit = form.find('input[name="_method"]').val() === 'PUT';
+                /*if (isEdit) {
+                    var editedId = $('#categoryId').val();
+                    if (table && table.row('#' + editedId).length) {
+                        table.row('#' + editedId).invalidate().draw(false);
+                    } else if (table && table.ajax) {
+                        table.ajax.reload(null, false);
+                    } else if (table && table.draw) {
+                        table.draw(false);
+                    }
+                } else {
+                    if (table && table.ajax) {
+                        table.ajax.reload();
+                    } else if (table && table.draw) {
+                        table.draw(true);
+                    }
+                }*/
             },
             error: function(xhr) {
+                // Debug log for backend error
+                console.error('AJAX error:', xhr.status, xhr.responseText);
                 if (xhr.status === 422) {
                     var errors = xhr.responseJSON.errors;
                     $.each(errors, function(field, messages) {

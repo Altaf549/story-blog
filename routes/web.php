@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\StoryController;
 
 // Public routes
 Route::get('/', function () {
@@ -29,6 +30,16 @@ Route::prefix('admin')->group(function () {
                 'update' => 'admin.categories.update',
                 'destroy' => 'admin.categories.destroy',
             ]);
+
+        // Story Management Routes
+        Route::resource('stories', StoryController::class)->only(['index','store','update','destroy'])
+            ->names([
+                'index' => 'admin.stories.index',
+                'store' => 'admin.stories.store',
+                'update' => 'admin.stories.update',
+                'destroy' => 'admin.stories.destroy',
+            ]);
+        Route::patch('stories/{story}/status', [StoryController::class, 'changeStatus'])->name('admin.stories.status');
     });
 });
 

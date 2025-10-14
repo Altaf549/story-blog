@@ -13,8 +13,8 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#" class="nav-link">
-                    Story
+                <a href="{{ route('admin.stories.index') }}" class="nav-link {{ request()->routeIs('admin.stories.*') ? 'active' : '' }}">
+                    Stories
                 </a>
             </li>
             <li class="nav-item">

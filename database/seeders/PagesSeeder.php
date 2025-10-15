@@ -26,3 +26,4 @@ class PagesSeeder extends Seeder
 }
 
 
+

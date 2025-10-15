@@ -13,3 +13,4 @@ class PrivacyPolicy extends Model
 }
 
 
+

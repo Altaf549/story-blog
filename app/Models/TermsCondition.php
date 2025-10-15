@@ -13,3 +13,4 @@ class TermsCondition extends Model
 }
 
 
+

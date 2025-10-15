@@ -31,3 +31,4 @@ class PrivacyPolicyController extends Controller
 }
 
 
+

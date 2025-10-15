@@ -30,7 +30,7 @@ class HomeController extends Controller
         $categories = Category::query()
             ->where('is_active', true)
             ->orderBy('name')
-            ->limit(5)
+            ->limit(6)
             ->get(['id', 'name', 'slug', 'description', 'image'])
             ->map(function (Category $category) {
                 return [

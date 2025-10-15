@@ -18,6 +18,31 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a href="{{ route('admin.privacy.index') }}" class="nav-link {{ request()->routeIs('admin.privacy.*') ? 'active' : '' }}">
+                    Privacy Policy
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.terms.index') }}" class="nav-link {{ request()->routeIs('admin.terms.*') ? 'active' : '' }}">
+                    Terms & Conditions
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.about.index') }}" class="nav-link {{ request()->routeIs('admin.about.*') ? 'active' : '' }}">
+                    About Us
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.contact.index') }}" class="nav-link {{ request()->routeIs('admin.contact.*') ? 'active' : '' }}">
+                    Contact Us
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('admin.banners.index') }}" class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
+                    Banners
+                </a>
+            </li>
+            <li class="nav-item">
                 <a href="#" class="nav-link">
                     Users
                 </a>

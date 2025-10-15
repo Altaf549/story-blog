@@ -3,6 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\StoryController;
+use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\PrivacyPolicyController;
+use App\Http\Controllers\Admin\TermsConditionController;
+use App\Http\Controllers\Admin\AboutPageController;
+use App\Http\Controllers\Admin\ContactPageController;
 
 // Public routes
 Route::get('/', function () {
@@ -40,6 +46,28 @@ Route::prefix('admin')->group(function () {
                 'destroy' => 'admin.stories.destroy',
             ]);
         Route::patch('stories/{story}/status', [StoryController::class, 'changeStatus'])->name('admin.stories.status');
+
+        // Settings Pages split tables
+        Route::get('privacy-policy', [PrivacyPolicyController::class, 'index'])->name('admin.privacy.index');
+        Route::post('privacy-policy', [PrivacyPolicyController::class, 'store'])->name('admin.privacy.store');
+
+        Route::get('terms-conditions', [TermsConditionController::class, 'index'])->name('admin.terms.index');
+        Route::post('terms-conditions', [TermsConditionController::class, 'store'])->name('admin.terms.store');
+
+        Route::get('about-us', [AboutPageController::class, 'index'])->name('admin.about.index');
+        Route::post('about-us', [AboutPageController::class, 'store'])->name('admin.about.store');
+
+        Route::get('contact-us', [ContactPageController::class, 'index'])->name('admin.contact.index');
+        Route::post('contact-us', [ContactPageController::class, 'store'])->name('admin.contact.store');
+
+        // Banner Management
+        Route::resource('banners', BannerController::class)->only(['index','store','update','destroy'])
+            ->names([
+                'index' => 'admin.banners.index',
+                'store' => 'admin.banners.store',
+                'update' => 'admin.banners.update',
+                'destroy' => 'admin.banners.destroy',
+            ]);
     });
 });
 

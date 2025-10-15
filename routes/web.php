@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController as PublicHomeController;
+use App\Http\Controllers\PublicCategoryController;
+use App\Http\Controllers\PublicStoryController;
+use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\StoryController;
 use App\Http\Controllers\Admin\PageController;
@@ -11,9 +15,18 @@ use App\Http\Controllers\Admin\AboutPageController;
 use App\Http\Controllers\Admin\ContactPageController;
 
 // Public routes
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [PublicHomeController::class, 'index'])->name('home');
+
+// Public listing routes (simple placeholders)
+Route::get('/categories', [PublicCategoryController::class, 'index'])->name('categories.index.public');
+
+Route::get('/stories', [PublicStoryController::class, 'index'])->name('stories.index.public');
+
+// Static content pages (public)
+Route::get('/privacy-policy', [PublicPageController::class, 'privacy'])->name('privacy.public');
+Route::get('/terms-conditions', [PublicPageController::class, 'terms'])->name('terms.public');
+Route::get('/about-us', [PublicPageController::class, 'about'])->name('about.public');
+Route::get('/contact-us', [PublicPageController::class, 'contact'])->name('contact.public');
 
 // Fallback login route name for auth middleware redirects
 Route::get('/login', function () {

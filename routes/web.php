@@ -66,10 +66,11 @@ Route::prefix('admin')->group(function () {
         Route::post('contact-us', [ContactPageController::class, 'store'])->name('admin.contact.store');
 
         // Banner Management
-        Route::resource('banners', BannerController::class)->only(['index','store','update','destroy'])
+        Route::resource('banners', BannerController::class)->only(['index','store','edit','update','destroy'])
             ->names([
                 'index' => 'admin.banners.index',
                 'store' => 'admin.banners.store',
+                'edit' => 'admin.banners.edit',
                 'update' => 'admin.banners.update',
                 'destroy' => 'admin.banners.destroy',
             ]);

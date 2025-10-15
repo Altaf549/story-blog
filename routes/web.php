@@ -15,6 +15,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Fallback login route name for auth middleware redirects
+Route::get('/login', function () {
+    return redirect()->route('admin.login');
+})->name('login');
+
 // Admin Authentication Routes
 Route::prefix('admin')->group(function () {
     Route::get('/login', [AdminController::class, 'showLoginForm'])->name('admin.login');

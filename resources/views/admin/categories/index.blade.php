@@ -18,6 +18,7 @@
                             <tr>
                                 <th>No</th>
                                 <th>Name</th>
+                                <th>Image</th>
                                 <th>Slug</th>
                                 <th>Description</th>
                                 <th>Status</th>
@@ -45,13 +46,21 @@
                 <h5 class="modal-title" id="modalTitle">Add New Category</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="categoryForm" method="POST">
+            <form id="categoryForm" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="id" id="categoryId">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Image</label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                        <div class="form-text">Recommended square or 4:3, max 2MB.</div>
+                        <div class="mt-2" id="catImagePreviewContainer" style="display:none;">
+                            <img id="catImagePreview" src="#" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border: 1px solid #ddd;" />
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
@@ -109,6 +118,11 @@ $(function() {
         columns: [
             {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
             {data: 'name', name: 'name'},
+            {data: 'image', name: 'image', orderable: false, searchable: false, render: function(data, type, row) {
+                if (!data) return '<span class="text-muted">—</span>';
+                var src = '{{ asset('storage') }}' + '/' + data;
+                return '<img src="' + src + '" alt="Image" style="width:42px;height:42px;object-fit:cover;border-radius:4px;">';
+            }},
             {data: 'slug', name: 'slug'},
             {data: 'description', name: 'description', render: function(data) {
                 return data || 'N/A';
@@ -133,6 +147,7 @@ $(function() {
         form.attr('action', "{{ route('admin.categories.store') }}");
         form.attr('method', 'POST');
         $('#method-field').remove(); // Remove method spoofing for add
+        $('#catImagePreviewContainer').hide();
     });
 
     // Edit category
@@ -157,6 +172,12 @@ $(function() {
                 $('#name').val(data.name);
                 $('#description').val(data.description);
                 $('#is_active').prop('checked', data.is_active == 1);
+                if (data.image) {
+                    $('#catImagePreview').attr('src', '{{ asset('storage') }}' + '/' + data.image);
+                    $('#catImagePreviewContainer').show();
+                } else {
+                    $('#catImagePreviewContainer').hide();
+                }
             },
             error: function(xhr) {
                 console.error('Edit Error:', xhr.responseText);
@@ -178,6 +199,7 @@ $(function() {
         // Clear validation errors
         form.find('.is-invalid').removeClass('is-invalid');
         form.find('.invalid-feedback').remove();
+        $('#catImagePreviewContainer').hide();
     });
 
     // Submit form
@@ -207,6 +229,12 @@ $(function() {
         form.find('.invalid-feedback').remove();
 
         var formData = new FormData(this);
+
+        // Remove duplicate hidden is_active if present twice
+        var hiddenFields = form.find('.is_active_hidden');
+        if (hiddenFields.length > 1) {
+            hiddenFields.slice(1).remove();
+        }
 
         $.ajax({
             url: url,
@@ -252,6 +280,18 @@ $(function() {
                 }
             }
         });
+    });
+
+    // Preview selected image
+    $('#image').on('change', function(e) {
+        var file = e.target.files && e.target.files[0];
+        if (!file) { $('#catImagePreviewContainer').hide(); return; }
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            $('#catImagePreview').attr('src', ev.target.result);
+            $('#catImagePreviewContainer').show();
+        };
+        reader.readAsDataURL(file);
     });
 
     // Delete category

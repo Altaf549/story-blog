@@ -15,7 +15,7 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Category::select(['id', 'name', 'slug', 'description', 'is_active', 'created_at']);
+            $query = Category::select(['id', 'name', 'slug', 'description', 'image', 'is_active', 'created_at']);
             
             return DataTables::of($query)
                 ->addIndexColumn()
@@ -47,6 +47,7 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $category = $request->id ? Category::findOrFail($request->id) : new Category();
@@ -54,6 +55,10 @@ class CategoryController extends Controller
         $category->name = $request->name;
         $category->description = $request->description;
         $category->is_active = $request->is_active ?? true;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('categories', 'public');
+            $category->image = $path;
+        }
         $category->save();
 
         return response()->json(['message' => 'Category saved successfully.']);
@@ -79,11 +84,16 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'required|boolean',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $category->name = $validated['name'];
         $category->description = $validated['description'] ?? null;
         $category->is_active = $validated['is_active'];
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('categories', 'public');
+            $category->image = $path;
+        }
         $category->save();
 
         return response()->json(['message' => 'Category updated successfully']);

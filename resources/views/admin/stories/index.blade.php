@@ -24,6 +24,7 @@
             <tr>
               <th>#</th>
               <th>Title</th>
+              <th>Banner</th>
               <th>Author</th>
               <th>Category</th>
               <th>Status</th>
@@ -36,9 +37,17 @@
             <tr data-id="{{ $story->id }}"
                 data-title="{{ $story->title }}"
                 data-content='@json($story->content)'
-                data-category_id="{{ $story->category_id }}">
+                data-category_id="{{ $story->category_id }}"
+                data-banner_image="{{ $story->banner_image }}">
               <td>{{ $story->id }}</td>
               <td>{{ $story->title }}</td>
+              <td>
+                @if($story->banner_image)
+                  <img src="{{ asset('storage/' . $story->banner_image) }}" alt="Banner" style="width: 80px; height: 45px; object-fit: cover;">
+                @else
+                  <span class="text-muted">—</span>
+                @endif
+              </td>
               <td>{{ optional($story->user)->name }}</td>
               <td>{{ optional($story->category)->name }}</td>
               <td>
@@ -76,7 +85,7 @@
   <div class="modal fade" id="storyModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <form id="storyForm" method="POST">
+        <form id="storyForm" method="POST" enctype="multipart/form-data">
           @csrf
           <div class="modal-header">
             <h5 class="modal-title" id="storyModalLabel">Add Story</h5>
@@ -95,6 +104,14 @@
                   <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                 @endforeach
               </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Banner Image</label>
+              <input type="file" class="form-control" name="banner_image" id="storyBannerImage" accept="image/*">
+              <div class="form-text">Recommended aspect ratio ~16:9. Max 2MB.</div>
+              <div class="mt-2" id="bannerPreviewContainer" style="display:none;">
+                <img id="bannerPreview" src="#" alt="Preview" style="width: 160px; height: 90px; object-fit: cover; border: 1px solid #ddd;" />
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label">Content</label>
@@ -178,7 +195,7 @@
 
       const storeUrl = "{{ route('admin.stories.store') }}";
       let modalMode = 'create';
-      let editPayload = { id: null, title: '', content: '', categoryId: '' };
+      let editPayload = { id: null, title: '', content: '', categoryId: '', bannerImage: '' };
 
       // Ensure Summernote content is submitted with the form
       $('#storyForm').on('submit', function() {
@@ -201,6 +218,7 @@
           try { return JSON.parse(row.attr('data-content')); } catch(e) { return row.attr('data-content') || ''; }
         })();
         editPayload.categoryId = row.data('category_id');
+        editPayload.bannerImage = row.data('banner_image') || '';
         $('#storyModal').modal('show');
       });
 
@@ -214,6 +232,8 @@
           $('#storyForm input[name=_method]').remove();
           $('#storyTitle').val('');
           $('#storyCategory').val('');
+          $('#storyBannerImage').val('');
+          $('#bannerPreviewContainer').hide();
           if ($.fn.summernote) {
             $('#storyContent').summernote('code', '');
             $('#storyContent').summernote('focus');
@@ -228,6 +248,12 @@
           }
           $('#storyTitle').val(editPayload.title);
           $('#storyCategory').val(editPayload.categoryId);
+          if (editPayload.bannerImage) {
+            $('#bannerPreview').attr('src', `{{ asset('storage') }}/${editPayload.bannerImage}`);
+            $('#bannerPreviewContainer').show();
+          } else {
+            $('#bannerPreviewContainer').hide();
+          }
           if ($.fn.summernote) {
             $('#storyContent').summernote('code', editPayload.content || '');
             $('#storyContent').summernote('focus');
@@ -237,7 +263,19 @@
 
       $('#storyModal').on('hidden.bs.modal', function() {
         modalMode = 'create';
-        editPayload = { id: null, title: '', content: '', categoryId: '' };
+        editPayload = { id: null, title: '', content: '', categoryId: '', bannerImage: '' };
+      });
+
+      // Preview banner image on file select
+      $('#storyBannerImage').on('change', function(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) { $('#bannerPreviewContainer').hide(); return; }
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          $('#bannerPreview').attr('src', ev.target.result);
+          $('#bannerPreviewContainer').show();
+        };
+        reader.readAsDataURL(file);
       });
     });
   </script>

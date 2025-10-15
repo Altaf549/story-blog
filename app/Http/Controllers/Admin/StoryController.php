@@ -24,11 +24,16 @@ class StoryController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'category_id' => ['nullable', 'exists:categories,id'],
+            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $story = new Story($validated);
         $story->user_id = auth()->id();
         $story->status = Story::STATUS_PENDING;
+        if ($request->hasFile('banner_image')) {
+            $path = $request->file('banner_image')->store('stories', 'public');
+            $story->banner_image = $path;
+        }
         $story->save();
 
         return back()->with('success', 'Story created');
@@ -40,9 +45,15 @@ class StoryController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'category_id' => ['nullable', 'exists:categories,id'],
+            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
-        $story->update($validated);
+        $story->fill($validated);
+        if ($request->hasFile('banner_image')) {
+            $path = $request->file('banner_image')->store('stories', 'public');
+            $story->banner_image = $path;
+        }
+        $story->save();
         return back()->with('success', 'Story updated');
     }
 

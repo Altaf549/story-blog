@@ -20,6 +20,7 @@ class Story extends Model
         'status',
         'user_id',
         'category_id',
+        'banner_image',
     ];
 
     public function user(): BelongsTo

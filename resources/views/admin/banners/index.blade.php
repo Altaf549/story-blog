@@ -47,6 +47,9 @@
                         <label class="form-label">Image</label>
                         <input type="file" class="form-control" name="image" id="image" accept="image/*">
                         <small class="text-muted">Upload a banner image. Required for new banners.</small>
+						<div class="mt-2" id="imagePreviewContainer" style="display:none;">
+							<img id="imagePreview" src="#" alt="Preview" style="height:80px; border:1px solid #ddd; object-fit:cover;" />
+						</div>
                     </div>
 					<div class="mb-3">
 						<label class="form-label">Link URL</label>
@@ -71,6 +74,7 @@
 @push('scripts')
 <script>
 $(function() {
+	const storageBase = "{{ asset('storage') }}"; // e.g. /storage
 	const table = $('#banners-table').DataTable({
 		processing: true,
 		serverSide: true,
@@ -90,6 +94,9 @@ $(function() {
 	$('#createBanner').on('click', function(){
 		$('#banner_id').val('');
 		$('#bannerForm')[0].reset();
+		$('#image').val('');
+		$('#imagePreview').attr('src', '#');
+		$('#imagePreviewContainer').hide();
 		$('#bannerModal').modal('show');
 	});
 
@@ -101,6 +108,13 @@ $(function() {
 			$('#link_url').val(data.link_url || '');
 			$('#is_active').prop('checked', !!data.is_active);
 			$('#position').val(data.position || 0);
+			if (data.image_path) {
+				const url = storageBase.replace(/\/$/, '') + '/' + String(data.image_path).replace(/^\//, '');
+				$('#imagePreview').attr('src', url);
+				$('#imagePreviewContainer').show();
+			} else {
+				$('#imagePreviewContainer').hide();
+			}
 			$('#bannerModal').modal('show');
 		});
 	});
@@ -114,6 +128,18 @@ $(function() {
 			data: { _method: 'DELETE', _token: $('meta[name="csrf-token"]').attr('content') },
 			success: function(){ table.ajax.reload(null, false); }
 		});
+	});
+
+	// Live preview when selecting a new image file
+	$('#image').on('change', function(e){
+		const file = e.target.files && e.target.files[0];
+		if (!file) { $('#imagePreviewContainer').hide(); return; }
+		const reader = new FileReader();
+		reader.onload = function(ev){
+			$('#imagePreview').attr('src', ev.target.result);
+			$('#imagePreviewContainer').show();
+		};
+		reader.readAsDataURL(file);
 	});
 });
 </script>

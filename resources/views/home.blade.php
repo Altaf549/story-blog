@@ -18,7 +18,7 @@
             </div>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 @forelse($categories as $category)
-                    <a href="#" class="block border rounded p-3 text-center">
+                    <a href="{{ route('categories.stories.public', $category->slug) }}" class="block border rounded p-3 text-center">
                         @if($category->image)
                             <img src="{{ asset('storage/'.$category->image) }}" alt="{{ $category->name }}" style="width:100%;height:120px;object-fit:cover;">
                         @endif
@@ -48,7 +48,7 @@
                                 {{ Str::limit(strip_tags($story->content), 400) }}
                             </p>
                             <div class="mt-3">
-                                <a href="{{ route('stories.index.public') }}" class="inline-block px-3 py-1 text-sm bg-blue-600 text-white rounded">Read more</a>
+                                <a href="{{ route('stories.show.public', $story) }}" class="inline-block px-3 py-1 text-sm bg-blue-600 text-white rounded">Read more</a>
                             </div>
                         </div>
                     </article>

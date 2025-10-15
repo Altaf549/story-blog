@@ -20,7 +20,11 @@ Route::get('/', [PublicHomeController::class, 'index'])->name('home');
 // Public listing routes (simple placeholders)
 Route::get('/categories', [PublicCategoryController::class, 'index'])->name('categories.index.public');
 
+// Public category stories route
+Route::get('/categories/{slug}', [PublicStoryController::class, 'byCategory'])->name('categories.stories.public');
+
 Route::get('/stories', [PublicStoryController::class, 'index'])->name('stories.index.public');
+Route::get('/stories/{story}', [PublicStoryController::class, 'show'])->name('stories.show.public');
 
 // Static content pages (public)
 Route::get('/privacy-policy', [PublicPageController::class, 'privacy'])->name('privacy.public');

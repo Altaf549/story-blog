@@ -9,7 +9,7 @@
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         @forelse($categories as $category)
-            <a href="#" class="block border rounded p-3 text-center">
+            <a href="{{ route('categories.stories.public', $category->slug) }}" class="block border rounded p-3 text-center">
                 @if($category->image)
                     <img src="{{ asset('storage/'.$category->image) }}" alt="{{ $category->name }}" style="width:100%;height:120px;object-fit:cover;">
                 @endif

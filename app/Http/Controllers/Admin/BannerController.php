@@ -20,10 +20,9 @@ class BannerController extends Controller
 				->addIndexColumn()
                 ->editColumn('image_path', function ($row) {
                     if (!$row->image_path) {
-                        return '';
+                        return '<span class="text-muted">—</span>';
                     }
-                    $url = Storage::disk('public')->url($row->image_path);
-                    return '<img src="'.$url.'" alt="'.$row->title.'" style="height:40px" />';
+                    return $row->image_path;
                 })
 				->editColumn('is_active', function ($row) {
 					return $row->is_active
@@ -73,7 +72,15 @@ class BannerController extends Controller
 
 	public function edit($id)
 	{
-		return response()->json(Banner::findOrFail($id));
+		$banner = Banner::findOrFail($id);
+        $data = $banner->toArray();
+        
+        // Ensure image_path is the raw path without storage URL
+        if ($banner->image_path) {
+            $data['image_path'] = $banner->image_path;
+        }
+        
+        return response()->json($data);
 	}
 
 	public function update(Request $request, Banner $banner): RedirectResponse

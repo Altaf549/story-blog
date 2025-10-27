@@ -82,7 +82,11 @@ $(function() {
         columns: [
 			{ data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
 			{ data: 'title', name: 'title' },
-            { data: 'image_path', name: 'image_path' },
+            { data: 'image_path', name: 'image_path', orderable: false, searchable: false, render: function(data) {
+                if (!data) return '<span class="text-muted">—</span>';
+                var src = storageBase + '/' + data;
+                return '<img src="' + src + '" alt="Banner" style="max-width: 100px; max-height: 50px; object-fit: contain;">';
+            }},
 			{ data: 'link_url', name: 'link_url', render: function(data){ return data ? '<a href="'+data+'" target="_blank">'+data+'</a>' : ''; } },
 			{ data: 'is_active', name: 'is_active', orderable: false, searchable: false },
 			{ data: 'position', name: 'position' },

@@ -24,16 +24,13 @@ class StoryController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'category_id' => ['nullable', 'exists:categories,id'],
-            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image_id' => ['required', 'string', 'max:255'],
+            'youtube_url' => ['nullable', 'url', 'max:255'],
         ]);
 
         $story = new Story($validated);
         $story->user_id = auth()->id();
         $story->status = Story::STATUS_PENDING;
-        if ($request->hasFile('banner_image')) {
-            $path = $request->file('banner_image')->store('stories', 'public');
-            $story->banner_image = $path;
-        }
         $story->save();
 
         return back()->with('success', 'Story created');
@@ -45,15 +42,11 @@ class StoryController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
             'category_id' => ['nullable', 'exists:categories,id'],
-            'banner_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image_id' => ['required', 'string', 'max:255'],
+            'youtube_url' => ['nullable', 'url', 'max:255'],
         ]);
 
-        $story->fill($validated);
-        if ($request->hasFile('banner_image')) {
-            $path = $request->file('banner_image')->store('stories', 'public');
-            $story->banner_image = $path;
-        }
-        $story->save();
+        $story->update($validated);
         return back()->with('success', 'Story updated');
     }
 

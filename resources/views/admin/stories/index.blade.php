@@ -25,6 +25,7 @@
               <th>#</th>
               <th>Title</th>
               <th>Banner</th>
+              <th>YouTube URL</th>
               <th>Author</th>
               <th>Category</th>
               <th>Status</th>
@@ -38,12 +39,25 @@
                 data-title="{{ $story->title }}"
                 data-content='@json($story->content)'
                 data-category_id="{{ $story->category_id }}"
-                data-banner_image="{{ $story->banner_image }}">
+                data-image_id="{{ $story->image_id }}"
+                data-youtube_url="{{ $story->youtube_url ?? '' }}">
               <td>{{ $story->id }}</td>
               <td>{{ $story->title }}</td>
               <td>
-                @if($story->banner_image)
-                  <img src="{{ asset('storage/' . $story->banner_image) }}" alt="Banner" style="width: 80px; height: 45px; object-fit: cover;">
+                @if($story->image_id)
+                  <img src="https://drive.google.com/thumbnail?id={{ $story->image_id }}&sz=w200" 
+                       alt="Banner" 
+                       style="width: 80px; height: 45px; object-fit: cover;"
+                       onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=\'text-muted\'>—</span>'">
+                @else
+                  <span class="text-muted">—</span>
+                @endif
+              </td>
+              <td>
+                @if($story->youtube_url)
+                  <a href="{{ $story->youtube_url }}" target="_blank" title="{{ $story->youtube_url }}">
+                    <i class="fas fa-external-link-alt"></i> View
+                  </a>
                 @else
                   <span class="text-muted">—</span>
                 @endif
@@ -106,12 +120,20 @@
               </select>
             </div>
             <div class="mb-3">
-              <label class="form-label">Banner Image</label>
-              <input type="file" class="form-control" name="banner_image" id="storyBannerImage" accept="image/*">
-              <div class="form-text">Recommended aspect ratio ~16:9. Max 2MB.</div>
+              <label class="form-label">Google Drive Image ID</label>
+              <div class="input-group">
+                <input type="text" class="form-control" name="image_id" id="image_id" placeholder="Enter Google Drive Image ID" required>
+                <button type="button" class="btn btn-outline-secondary" id="previewImage">Preview</button>
+              </div>
+              <small class="text-muted">Enter the Google Drive Image ID (e.g., 1a2b3c4d5e6f7g8h9i0j)</small>
               <div class="mt-2" id="bannerPreviewContainer" style="display:none;">
                 <img id="bannerPreview" src="#" alt="Preview" style="width: 160px; height: 90px; object-fit: cover; border: 1px solid #ddd;" />
               </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">YouTube URL</label>
+              <input type="url" class="form-control" name="youtube_url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+              <div class="form-text">Optional: Link to a YouTube video related to this story</div>
             </div>
             <div class="mb-3">
               <label class="form-label">Content</label>
@@ -212,13 +234,17 @@
       $('#storiesTable').on('click', '.btn-edit', function() {
         const row = $(this).closest('tr');
         modalMode = 'edit';
-        editPayload.id = row.data('id');
-        editPayload.title = row.data('title');
-        editPayload.content = (function() {
-          try { return JSON.parse(row.attr('data-content')); } catch(e) { return row.attr('data-content') || ''; }
-        })();
-        editPayload.categoryId = row.data('category_id');
-        editPayload.bannerImage = row.data('banner_image') || '';
+        editPayload = {
+          id: row.data('id'),
+          title: row.data('title'),
+          content: (function() {
+            try { return JSON.parse(row.attr('data-content')); } 
+            catch(e) { return row.attr('data-content') || ''; }
+          })(),
+          categoryId: row.data('category_id'),
+          imageId: row.data('image_id') || '',
+          youtubeUrl: row.data('youtube_url') || ''
+        };
         $('#storyModal').modal('show');
       });
 
@@ -232,7 +258,8 @@
           $('#storyForm input[name=_method]').remove();
           $('#storyTitle').val('');
           $('#storyCategory').val('');
-          $('#storyBannerImage').val('');
+          $('#image_id').val('');
+          $('#youtubeUrl').val('');
           $('#bannerPreviewContainer').hide();
           if ($.fn.summernote) {
             $('#storyContent').summernote('code', '');
@@ -240,7 +267,7 @@
           }
         } else {
           $('#storyModalLabel').text('Edit Story');
-          $('#storyForm').attr('action', `{{ url('admin/stories') }}/${editPayload.id}`).attr('method', 'POST');
+          $('#storyForm').attr('action', `/admin/stories/${editPayload.id}`).attr('method', 'POST');
           if (!$('#storyForm input[name=_method]').length) {
             $('#storyForm').append('<input type="hidden" name="_method" value="PUT">');
           } else {
@@ -248,8 +275,10 @@
           }
           $('#storyTitle').val(editPayload.title);
           $('#storyCategory').val(editPayload.categoryId);
-          if (editPayload.bannerImage) {
-            $('#bannerPreview').attr('src', `{{ asset('storage') }}/${editPayload.bannerImage}`);
+          $('#image_id').val(editPayload.imageId);
+          $('#youtubeUrl').val(editPayload.youtubeUrl);
+          if (editPayload.imageId) {
+            $('#bannerPreview').attr('src', 'https://drive.google.com/thumbnail?id=' + editPayload.imageId + '&sz=w1000');
             $('#bannerPreviewContainer').show();
           } else {
             $('#bannerPreviewContainer').hide();
@@ -266,16 +295,37 @@
         editPayload = { id: null, title: '', content: '', categoryId: '', bannerImage: '' };
       });
 
-      // Preview banner image on file select
-      $('#storyBannerImage').on('change', function(e) {
-        const file = e.target.files && e.target.files[0];
-        if (!file) { $('#bannerPreviewContainer').hide(); return; }
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          $('#bannerPreview').attr('src', ev.target.result);
+      // Handle image preview button click
+      $('#previewImage').on('click', function() {
+        const imageId = $('#image_id').val().trim();
+        if (imageId) {
+          const previewUrl = 'https://drive.google.com/thumbnail?id=' + imageId + '&sz=w1000';
+          $('#bannerPreview').attr('src', previewUrl).on('error', function() {
+            alert('Could not load image. Please check the Image ID.');
+            $(this).attr('src', '#');
+            $('#bannerPreviewContainer').hide();
+          });
           $('#bannerPreviewContainer').show();
-        };
-        reader.readAsDataURL(file);
+        } else {
+          alert('Please enter a valid Google Drive Image ID');
+        }
+      });
+      
+      // Auto-preview when image_id changes and has value
+      $('#image_id').on('change', function() {
+        const imageId = $(this).val().trim();
+        if (imageId) {
+          const previewUrl = 'https://drive.google.com/thumbnail?id=' + imageId + '&sz=w1000';
+          $('#bannerPreview').attr('src', previewUrl)
+            .on('load', function() {
+              $('#bannerPreviewContainer').show();
+            })
+            .on('error', function() {
+              $('#bannerPreviewContainer').hide();
+            });
+        } else {
+          $('#bannerPreviewContainer').hide();
+        }
       });
     });
   </script>

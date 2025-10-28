@@ -11,8 +11,8 @@
         <h1 class="text-3xl font-bold mb-3">{{ $story->title }}</h1>
         <div class="text-sm text-gray-600 mb-4">{{ optional($story->category)->name }}</div>
 
-        @if($story->banner_image)
-            <img src="{{ asset('storage/'.$story->banner_image) }}" alt="{{ $story->title }}" style="width:100%;height:auto;" class="mb-6">
+        @if($story->image_id)
+            <img src="https://drive.google.com/thumbnail?id={{ $story->image_id }}&sz=w1200" alt="{{ $story->title }}" style="width:100%;height:auto;" class="mb-6">
         @endif
 
         <div class="prose max-w-none">

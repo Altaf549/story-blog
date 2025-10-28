@@ -6,7 +6,7 @@
         @if($banner)
             <section class="mb-8">
                 <a href="{{ $banner->link_url ?? '#' }}" class="block">
-                    <img src="{{ asset('storage/'.$banner->image_path) }}" alt="{{ $banner->title }}" style="width:100%;height:auto;">
+                    <img src="https://drive.google.com/thumbnail?id={{ $banner->image_id }}&sz=w1200" alt="{{ $banner->title }}" style="width:100%;height:auto;">
                 </a>
             </section>
         @endif
@@ -19,8 +19,8 @@
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 @forelse($categories as $category)
                     <a href="{{ route('categories.stories.public', $category->slug) }}" class="block border rounded p-3 text-center">
-                        @if($category->image)
-                            <img src="{{ asset('storage/'.$category->image) }}" alt="{{ $category->name }}" style="width:100%;height:120px;object-fit:cover;">
+                        @if($category->image_id)
+                            <img src="https://drive.google.com/thumbnail?id={{ $category->image_id }}&sz=w1200" alt="{{ $category->name }}" style="width:100%;height:120px;object-fit:cover;">
                         @endif
                         <div class="mt-2 font-medium">{{ $category->name }}</div>
                     </a>
@@ -38,8 +38,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($recentStories as $story)
                     <article class="border rounded overflow-hidden">
-                        @if($story->banner_image)
-                            <img src="{{ asset('storage/'.$story->banner_image) }}" alt="{{ $story->title }}" style="width:100%;height:180px;object-fit:cover;">
+                        @if($story->image_id)
+                            <img src="https://drive.google.com/thumbnail?id={{ $story->image_id }}&sz=w1200" alt="{{ $story->title }}" style="width:100%;height:180px;object-fit:cover;">
                         @endif
                         <div class="p-4">
                             <h3 class="text-lg font-semibold mb-1">{{ $story->title }}</h3>

@@ -10,8 +10,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @forelse($stories as $story)
             <article class="border rounded overflow-hidden">
-                @if($story->banner_image)
-                    <img src="{{ asset('storage/'.$story->banner_image) }}" alt="{{ $story->title }}" style="width:100%;height:180px;object-fit:cover;">
+                @if($story->image_id)
+                    <img src="https://drive.google.com/thumbnail?id={{ $story->image_id }}&sz=w1200" alt="{{ $story->title }}" style="width:100%;height:180px;object-fit:cover;">
                 @endif
                 <div class="p-4">
                     <h3 class="text-lg font-semibold mb-1"><a href="{{ route('stories.show.public', $story) }}" class="hover:underline">{{ $story->title }}</a></h3>

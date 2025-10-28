@@ -15,13 +15,12 @@ class HomeController extends Controller
         $banners = Banner::query()
             ->where('is_active', true)
             ->orderBy('position')
-            ->get(['id', 'title', 'image_path', 'link_url', 'position'])
+            ->get(['id', 'title', 'image_id', 'link_url', 'position'])
             ->map(function (Banner $banner) {
                 return [
                     'id' => $banner->id,
                     'title' => $banner->title,
-                    'image_path' => $banner->image_path,
-                    'image_url' => $banner->image_path ? Storage::url($banner->image_path) : null,
+                    'image_id' => $banner->image_id,
                     'link_url' => $banner->link_url,
                     'position' => $banner->position,
                 ];
@@ -31,15 +30,14 @@ class HomeController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->limit(6)
-            ->get(['id', 'name', 'slug', 'description', 'image'])
+            ->get(['id', 'name', 'slug', 'description', 'image_id'])
             ->map(function (Category $category) {
                 return [
                     'id' => $category->id,
                     'name' => $category->name,
                     'slug' => $category->slug,
                     'description' => $category->description,
-                    'image' => $category->image,
-                    'image_url' => $category->image ? Storage::url($category->image) : null,
+                    'image_id' => $category->image_id
                 ];
             });
 
@@ -54,8 +52,8 @@ class HomeController extends Controller
                     'id' => $story->id,
                     'title' => $story->title,
                     'content' => $story->content,
-                    'banner_image' => $story->banner_image,
-                    'banner_image_url' => $story->banner_image ? Storage::url($story->banner_image) : null,
+                    'image_id' => $story->image_id,
+                    'youtube_url' => $story->youtube_url,
                     'user' => $story->user ? [
                         'id' => $story->user->id,
                         'name' => $story->user->name,

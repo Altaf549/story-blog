@@ -17,7 +17,7 @@ class CategoryController extends Controller
                 $query->where('status', Story::STATUS_APPROVED);
             }])
             ->orderBy('name')
-            ->get(['id', 'name', 'slug', 'description', 'image']);
+            ->get(['id', 'name', 'slug', 'description', 'image_id']);
 
         $data = $categories->map(function (Category $category) {
             return [
@@ -25,8 +25,7 @@ class CategoryController extends Controller
                 'name' => $category->name,
                 'slug' => $category->slug,
                 'description' => $category->description,
-                'image' => $category->image,
-                'image_url' => $category->image ? Storage::url($category->image) : null,
+                'image_id' => $category->image_id,
                 'approved_stories_count' => $category->approved_stories_count,
             ];
         });

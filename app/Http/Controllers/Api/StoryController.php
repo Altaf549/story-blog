@@ -25,8 +25,8 @@ class StoryController extends Controller
                 'id' => $story->id,
                 'title' => $story->title,
                 'content' => $story->content,
-                'banner_image' => $story->banner_image,
-                'banner_image_url' => $story->banner_image ? Storage::url($story->banner_image) : null,
+                'image_id' => $story->image_id,
+                'youtube_url' => $story->youtube_url,
                 'user' => $story->user ? [
                     'id' => $story->user->id,
                     'name' => $story->user->name,
@@ -61,17 +61,17 @@ class StoryController extends Controller
                 'id' => $story->id,
                 'title' => $story->title,
                 'content' => $story->content,
-                'banner_image' => $story->banner_image,
-                'banner_image_url' => $story->banner_image ? Storage::url($story->banner_image) : null,
+                'image_id' => $story->image_id,
+                'youtube_url' => $story->youtube_url,
                 'user' => $story->user ? [
                     'id' => $story->user->id,
                     'name' => $story->user->name,
                 ] : null,
-                'category' => [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                ],
+                'category' => $story->category ? [
+                    'id' => $story->category->id,
+                    'name' => $story->category->name,
+                    'slug' => $story->category->slug,
+                ] : null,
                 'created_at' => $story->created_at,
             ];
         });

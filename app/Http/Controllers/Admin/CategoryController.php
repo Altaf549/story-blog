@@ -15,10 +15,16 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $query = Category::select(['id', 'name', 'slug', 'description', 'image', 'is_active', 'created_at']);
+            $query = Category::select(['id', 'name', 'slug', 'description', 'image_id', 'is_active', 'created_at']);
             
             return DataTables::of($query)
                 ->addIndexColumn()
+                ->editColumn('image_id', function ($row) {
+                    if (!$row->image_id) {
+                        return '<span class="text-muted">—</span>';
+                    }
+                    return '<img src="https://drive.google.com/thumbnail?id=' . $row->image_id . '&sz=w200" alt="Category" style="max-width: 100px; max-height: 50px; object-fit: contain;">';
+                })
                 ->addColumn('action', function($row) {
                     return '<a href="javascript:void(0)" class="edit btn btn-primary btn-sm me-1" data-id="'.$row->id.'">Edit</a>' .
                            '<a href="javascript:void(0)" class="delete btn btn-danger btn-sm" data-id="'.$row->id.'">Delete</a>';
@@ -31,7 +37,7 @@ class CategoryController extends Controller
                 ->editColumn('created_at', function($row) {
                     return $row->created_at->format('Y-m-d H:i:s');
                 })
-                ->rawColumns(['action', 'is_active'])
+                ->rawColumns(['image_id', 'action', 'is_active'])
                 ->make(true);
         }
 
@@ -43,22 +49,20 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'boolean',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_id' => [$request->id ? 'nullable' : 'required', 'string', 'max:255'],
         ]);
 
         $category = $request->id ? Category::findOrFail($request->id) : new Category();
         
-        $category->name = $request->name;
-        $category->description = $request->description;
-        $category->is_active = $request->is_active ?? true;
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('categories', 'public');
-            $category->image = $path;
-        }
+        $category->name = $validated['name'];
+        $category->description = $validated['description'] ?? null;
+        $category->is_active = $request->boolean('is_active', true);
+        $category->image_id = $validated['image_id'] ?? null;
+        
         $category->save();
 
         return response()->json(['message' => 'Category saved successfully.']);
@@ -70,7 +74,12 @@ class CategoryController extends Controller
     public function edit($id)
     {
         $category = Category::findOrFail($id);
-        return response()->json($category);
+        $data = $category->toArray();
+        
+        // Return the image_id
+        $data['image_id'] = $category->image_id;
+        
+        return response()->json($data);
     }
 
     /**
@@ -84,16 +93,14 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_active' => 'required|boolean',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'image_id' => 'required|string|max:255',
         ]);
 
         $category->name = $validated['name'];
         $category->description = $validated['description'] ?? null;
         $category->is_active = $validated['is_active'];
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('categories', 'public');
-            $category->image = $path;
-        }
+        $category->image_id = $validated['image_id'];
+        
         $category->save();
 
         return response()->json(['message' => 'Category updated successfully']);

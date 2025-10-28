@@ -55,11 +55,14 @@
                         <input type="text" class="form-control" id="name" name="name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="image" class="form-label">Image</label>
-                        <input type="file" class="form-control" id="image" name="image" accept="image/*">
-                        <div class="form-text">Recommended square or 4:3, max 2MB.</div>
-                        <div class="mt-2" id="catImagePreviewContainer" style="display:none;">
-                            <img id="catImagePreview" src="#" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border: 1px solid #ddd;" />
+                        <label class="form-label">Google Drive Image ID</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="image_id" id="image_id" placeholder="Enter Google Drive Image ID" required>
+                            <button type="button" class="btn btn-outline-secondary" id="previewImage">Preview</button>
+                        </div>
+                        <small class="text-muted">Enter the Google Drive Image ID (e.g., 1a2b3c4d5e6f7g8h9i0j)</small>
+                        <div class="mt-2" id="imagePreviewContainer" style="display:none;">
+                            <img id="imagePreview" src="#" alt="Preview" style="height:80px; border:1px solid #ddd; object-fit:cover;" />
                         </div>
                     </div>
                     <div class="mb-3">
@@ -111,17 +114,29 @@ $(function() {
             url: "{{ route('admin.categories.index') }}",
             type: 'GET',
             error: function(xhr, error, thrown) {
-                console.error('DataTables error:', error);
+                console.error('DataTables error:', xhr.responseText);
                 toastr.error('An error occurred while loading the table data.');
+                console.log('Error details:', { error: error, thrown: thrown });
+            },
+            dataSrc: function(json) {
+                console.log('DataTables response:', json); // Debug log
+                return json.data || [];
             }
         },
         columns: [
             {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
             {data: 'name', name: 'name'},
-            {data: 'image', name: 'image', orderable: false, searchable: false, render: function(data, type, row) {
-                if (!data) return '<span class="text-muted">—</span>';
-                var src = '{{ asset('storage') }}' + '/' + data;
-                return '<img src="' + src + '" alt="Image" style="width:42px;height:42px;object-fit:cover;border-radius:4px;">';
+            {data: 'image_id', name: 'image_id', orderable: false, searchable: false, 
+             render: function(data, type, row) {
+                if (!data || data === '') {
+                    return '<span class="text-muted">—</span>';
+                }
+                // Check if the data is already an image tag (from server-side rendering)
+                if (type === 'display' && data.startsWith('<img')) {
+                    return data;
+                }
+                // If it's just the image ID, create the image tag
+                return '<img src="https://drive.google.com/thumbnail?id=' + data + '&sz=w200" alt="Category Image" style="width:42px;height:42px;object-fit:cover;border-radius:4px;">';
             }},
             {data: 'slug', name: 'slug'},
             {data: 'description', name: 'description', render: function(data) {
@@ -140,49 +155,56 @@ $(function() {
 
     // Reset form specifically when clicking the Add button to avoid overriding edit state
     $(document).on('click', '[data-bs-target="#categoryModal"][data-bs-toggle="modal"]', function () {
-        var form = $('#categoryForm');
-        form[0].reset();
+        $('#categoryForm')[0].reset();
         $('#categoryId').val('');
         $('#modalTitle').text('Add New Category');
-        form.attr('action', "{{ route('admin.categories.store') }}");
-        form.attr('method', 'POST');
-        $('#method-field').remove(); // Remove method spoofing for add
-        $('#catImagePreviewContainer').hide();
+        $('.invalid-feedback').remove();
+        $('.is-invalid').removeClass('is-invalid');
+        $('#imagePreview').attr('src', '#');
+        $('#imagePreviewContainer').hide();
     });
 
-    // Edit category
+    // Handle edit button click
     $('body').on('click', '.edit', function(e) {
         e.preventDefault();
         var id = $(this).data('id');
-        $('#modalTitle').text('Edit Category');
-        $('#categoryModal').modal('show');
+        
+        // Use the correct route with the category ID
+        var editUrl = '{{ route("admin.categories.edit", ["category" => "__ID__"]) }}';
+        editUrl = editUrl.replace('__ID__', id);
+        
         $.ajax({
-            url: "{{ url('admin/categories') }}/" + id + "/edit",
+            url: editUrl,
             type: 'GET',
-            success: function(data) {
-                var form = $('#categoryForm');
-                form.attr('action', "{{ url('admin/categories') }}/" + id);
-                form.attr('method', 'POST');
-                // Remove any previous method spoofing
-                $('#method-field').remove();
-                // Add method spoofing for PUT request
-                form.prepend('<input type="hidden" name="_method" value="PUT" id="method-field">');
-                // Set form data
-                $('#categoryId').val(id);
-                $('#name').val(data.name);
-                $('#description').val(data.description);
-                $('#is_active').prop('checked', data.is_active == 1);
-                if (data.image) {
-                    $('#catImagePreview').attr('src', '{{ asset('storage') }}' + '/' + data.image);
-                    $('#catImagePreviewContainer').show();
+            success: function(response) {
+                console.log('Edit response:', response); // Debug log
+                
+                // Reset form and set values
+                $('#categoryForm')[0].reset();
+                $('#categoryId').val(response.id);
+                $('#name').val(response.name);
+                $('#description').val(response.description || '');
+                $('#is_active').prop('checked', response.is_active);
+                
+                // Set image preview if image_id exists
+                if (response.image_id) {
+                    console.log('Setting image_id:', response.image_id); // Debug log
+                    $('#image_id').val(response.image_id);
+                    $('#imagePreview').attr('src', 'https://drive.google.com/thumbnail?id=' + response.image_id + '&sz=w1000');
+                    $('#imagePreviewContainer').show();
                 } else {
-                    $('#catImagePreviewContainer').hide();
+                    console.log('No image_id found'); // Debug log
+                    $('#image_id').val('');
+                    $('#imagePreviewContainer').hide();
                 }
+                
+                // Update modal title and show
+                $('#modalTitle').text('Edit Category');
+                $('#categoryModal').modal('show');
             },
             error: function(xhr) {
-                console.error('Edit Error:', xhr.responseText);
-                $('#categoryModal').modal('hide');
-                toastr.error('Failed to load category data');
+                console.error('Error fetching category:', xhr);
+                toastr.error('Error loading category data');
             }
         });
     });
@@ -190,16 +212,12 @@ $(function() {
     // Reset form when modal is hidden
     $('#categoryModal').on('hidden.bs.modal', function () {
         var form = $('#categoryForm');
-        form.attr('action', "{{ route('admin.categories.store') }}");
-        form.attr('method', 'POST');
-        $('#method-field').remove(); // Remove method spoofing for add
         form[0].reset();
+        $('#imagePreviewContainer').hide();
         $('#categoryId').val('');
         $('#modalTitle').text('Add New Category');
-        // Clear validation errors
-        form.find('.is-invalid').removeClass('is-invalid');
-        form.find('.invalid-feedback').remove();
-        $('#catImagePreviewContainer').hide();
+        $('.invalid-feedback').remove();
+        $('.is-invalid').removeClass('is-invalid');
     });
 
     // Submit form
@@ -247,23 +265,6 @@ $(function() {
                 form[0].reset();
                 table.ajax.reload();
                 toastr.success((response && (response.message || response.success)) || 'Category saved successfully');
-                var isEdit = form.find('input[name="_method"]').val() === 'PUT';
-                /*if (isEdit) {
-                    var editedId = $('#categoryId').val();
-                    if (table && table.row('#' + editedId).length) {
-                        table.row('#' + editedId).invalidate().draw(false);
-                    } else if (table && table.ajax) {
-                        table.ajax.reload(null, false);
-                    } else if (table && table.draw) {
-                        table.draw(false);
-                    }
-                } else {
-                    if (table && table.ajax) {
-                        table.ajax.reload();
-                    } else if (table && table.draw) {
-                        table.draw(true);
-                    }
-                }*/
             },
             error: function(xhr) {
                 // Debug log for backend error
@@ -282,16 +283,31 @@ $(function() {
         });
     });
 
-    // Preview selected image
-    $('#image').on('change', function(e) {
-        var file = e.target.files && e.target.files[0];
-        if (!file) { $('#catImagePreviewContainer').hide(); return; }
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-            $('#catImagePreview').attr('src', ev.target.result);
-            $('#catImagePreviewContainer').show();
-        };
-        reader.readAsDataURL(file);
+    // Image preview for category
+    $('#previewImage').on('click', function() {
+        const imageId = $('#image_id').val().trim();
+        console.log('Preview clicked, imageId:', imageId); // Debug log
+        
+        if (imageId) {
+            const previewUrl = `https://drive.google.com/thumbnail?id=${imageId}&sz=w1000`;
+            console.log('Setting preview URL:', previewUrl); // Debug log
+            
+            $('#imagePreview')
+                .on('load', function() {
+                    console.log('Image loaded successfully');
+                    $('#imagePreviewContainer').show();
+                })
+                .on('error', function() {
+                    console.error('Failed to load image');
+                    toastr.error('Failed to load image. Please check the Image ID.');
+                    $('#imagePreviewContainer').hide();
+                })
+                .attr('src', previewUrl);
+        } else {
+            console.log('No image ID provided'); // Debug log
+            toastr.warning('Please enter a Google Drive Image ID');
+            $('#imagePreviewContainer').hide();
+        }
     });
 
     // Delete category
@@ -307,8 +323,12 @@ $(function() {
         var deleteButton = $(this);
         deleteButton.prop('disabled', true);
         
+        // Use the correct route with the category ID
+        var deleteUrl = '{{ route("admin.categories.destroy", ["category" => "__ID__"]) }}';
+        deleteUrl = deleteUrl.replace('__ID__', deleteId);
+        
         $.ajax({
-            url: "{{ url('admin/categories') }}/" + deleteId,
+            url: deleteUrl,
             type: 'DELETE',
             data: {
                 _token: '{{ csrf_token() }}'
@@ -316,9 +336,10 @@ $(function() {
             success: function(response) {
                 $('#deleteModal').modal('hide');
                 toastr.success('Category deleted successfully');
-                table.draw();  // Changed to table.draw() for proper refresh
+                table.draw();  // Refresh the table
             },
             error: function(xhr) {
+                console.error('Delete error:', xhr);
                 toastr.error('Error deleting category');
             },
             complete: function() {

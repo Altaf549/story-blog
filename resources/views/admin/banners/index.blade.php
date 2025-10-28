@@ -44,12 +44,15 @@
 						<input type="text" class="form-control" name="title" id="title" required>
 					</div>
                     <div class="mb-3">
-                        <label class="form-label">Image</label>
-                        <input type="file" class="form-control" name="image" id="image" accept="image/*">
-                        <small class="text-muted">Upload a banner image. Required for new banners.</small>
-						<div class="mt-2" id="imagePreviewContainer" style="display:none;">
-							<img id="imagePreview" src="#" alt="Preview" style="height:80px; border:1px solid #ddd; object-fit:cover;" />
-						</div>
+                        <label class="form-label">Google Drive Image ID</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="image_id" id="image_id" placeholder="Enter Google Drive Image ID" required>
+                            <button type="button" class="btn btn-outline-secondary" id="previewImage">Preview</button>
+                        </div>
+                        <small class="text-muted">Enter the Google Drive Image ID (e.g., 1a2b3c4d5e6f7g8h9i0j)</small>
+                        <div class="mt-2" id="imagePreviewContainer" style="display:none;">
+                            <img id="imagePreview" src="#" alt="Preview" style="height:80px; border:1px solid #ddd; object-fit:cover;" />
+                        </div>
                     </div>
 					<div class="mb-3">
 						<label class="form-label">Link URL</label>
@@ -82,10 +85,9 @@ $(function() {
         columns: [
 			{ data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
 			{ data: 'title', name: 'title' },
-            { data: 'image_path', name: 'image_path', orderable: false, searchable: false, render: function(data) {
+            { data: 'image_id', name: 'image_id', orderable: false, searchable: false, render: function(data) {
                 if (!data) return '<span class="text-muted">—</span>';
-                var src = storageBase + '/' + data;
-                return '<img src="' + src + '" alt="Banner" style="max-width: 100px; max-height: 50px; object-fit: contain;">';
+                return data; // The controller already formats this as an img tag
             }},
 			{ data: 'link_url', name: 'link_url', render: function(data){ return data ? '<a href="'+data+'" target="_blank">'+data+'</a>' : ''; } },
 			{ data: 'is_active', name: 'is_active', orderable: false, searchable: false },
@@ -98,7 +100,7 @@ $(function() {
 	$('#createBanner').on('click', function(){
 		$('#banner_id').val('');
 		$('#bannerForm')[0].reset();
-		$('#image').val('');
+		$('#image_id').val('');
 		$('#imagePreview').attr('src', '#');
 		$('#imagePreviewContainer').hide();
 		$('#bannerModal').modal('show');
@@ -112,9 +114,9 @@ $(function() {
 			$('#link_url').val(data.link_url || '');
 			$('#is_active').prop('checked', !!data.is_active);
 			$('#position').val(data.position || 0);
-			if (data.image_path) {
-				const url = storageBase.replace(/\/$/, '') + '/' + String(data.image_path).replace(/^\//, '');
-				$('#imagePreview').attr('src', url);
+			if (data.image_id) {
+				$('#image_id').val(data.image_id);
+				$('#imagePreview').attr('src', 'https://drive.google.com/thumbnail?id=' + data.image_id + '&sz=w1000');
 				$('#imagePreviewContainer').show();
 			} else {
 				$('#imagePreviewContainer').hide();
@@ -134,16 +136,23 @@ $(function() {
 		});
 	});
 
-	// Live preview when selecting a new image file
-	$('#image').on('change', function(e){
-		const file = e.target.files && e.target.files[0];
-		if (!file) { $('#imagePreviewContainer').hide(); return; }
-		const reader = new FileReader();
-		reader.onload = function(ev){
-			$('#imagePreview').attr('src', ev.target.result);
-			$('#imagePreviewContainer').show();
-		};
-		reader.readAsDataURL(file);
+	// Preview image from Google Drive ID
+	$('#previewImage').on('click', function(){
+		const imageId = $('#image_id').val().trim();
+		if (!imageId) {
+			alert('Please enter a Google Drive Image ID');
+			return;
+		}
+		$('#imagePreview').attr('src', 'https://drive.google.com/thumbnail?id=' + imageId + '&sz=w1000');
+		$('#imagePreviewContainer').show();
+	});
+
+	// Also update preview when pressing Enter in the input field
+	$('#image_id').on('keypress', function(e) {
+		if (e.which === 13) {
+			e.preventDefault();
+			$('#previewImage').click();
+		}
 	});
 });
 </script>

@@ -8,21 +8,20 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Support\Facades\Storage;
 
 class BannerController extends Controller
 {
 	public function index(Request $request): View|\Illuminate\Http\JsonResponse
 	{
 		if ($request->ajax()) {
-			$query = Banner::select(['id','title','image_path','link_url','is_active','position','created_at']);
+			$query = Banner::select(['id','title','image_id','link_url','is_active','position','created_at']);
             return DataTables::of($query)
 				->addIndexColumn()
-                ->editColumn('image_path', function ($row) {
-                    if (!$row->image_path) {
+                ->editColumn('image_id', function ($row) {
+                    if (!$row->image_id) {
                         return '<span class="text-muted">—</span>';
                     }
-                    return $row->image_path;
+                    return '<img src="https://drive.google.com/thumbnail?id=' . $row->image_id . '&sz=w200" alt="Banner" style="max-width: 100px; max-height: 50px; object-fit: contain;">';
                 })
 				->editColumn('is_active', function ($row) {
 					return $row->is_active
@@ -33,7 +32,7 @@ class BannerController extends Controller
 					return '<a href="javascript:void(0)" class="edit btn btn-primary btn-sm me-1" data-id="'.$row->id.'">Edit</a>' .
 					       '<a href="javascript:void(0)" class="delete btn btn-danger btn-sm" data-id="'.$row->id.'">Delete</a>';
 				})
-                ->rawColumns(['image_path','is_active','action'])
+                ->rawColumns(['image_id','is_active','action'])
 				->make(true);
 		}
 
@@ -44,7 +43,7 @@ class BannerController extends Controller
 	{
         $validated = $request->validate([
             'title' => ['required','string','max:255'],
-            'image' => [$request->id ? 'nullable' : 'required','image','mimes:jpeg,png,jpg,gif,webp','max:5120'],
+            'image_id' => [$request->id ? 'nullable' : 'required','string','max:255'],
             'link_url' => ['nullable','url','max:255'],
             'is_active' => ['nullable','boolean'],
             'position' => ['nullable','integer','min:0'],
@@ -55,15 +54,7 @@ class BannerController extends Controller
         $banner->link_url = $validated['link_url'] ?? null;
         $banner->is_active = $request->boolean('is_active', true);
         $banner->position = $validated['position'] ?? 0;
-
-        if ($request->hasFile('image')) {
-            // delete old image if exists
-            if ($banner->exists && $banner->image_path) {
-                Storage::disk('public')->delete($banner->image_path);
-            }
-            $path = $request->file('image')->store('banners', 'public');
-            $banner->image_path = $path;
-        }
+        $banner->image_id = $validated['image_id'];
 
         $banner->save();
 
@@ -75,10 +66,8 @@ class BannerController extends Controller
 		$banner = Banner::findOrFail($id);
         $data = $banner->toArray();
         
-        // Ensure image_path is the raw path without storage URL
-        if ($banner->image_path) {
-            $data['image_path'] = $banner->image_path;
-        }
+        // Return the image_id
+        $data['image_id'] = $banner->image_id;
         
         return response()->json($data);
 	}
@@ -87,7 +76,7 @@ class BannerController extends Controller
 	{
         $validated = $request->validate([
             'title' => ['required','string','max:255'],
-            'image' => ['nullable','image','mimes:jpeg,png,jpg,gif,webp','max:5120'],
+            'image_id' => ['required','string','max:255'],
             'link_url' => ['nullable','url','max:255'],
             'is_active' => ['required','boolean'],
             'position' => ['required','integer','min:0'],
@@ -97,14 +86,7 @@ class BannerController extends Controller
         $banner->link_url = $validated['link_url'] ?? null;
         $banner->is_active = $validated['is_active'];
         $banner->position = $validated['position'];
-
-        if ($request->hasFile('image')) {
-            if ($banner->image_path) {
-                Storage::disk('public')->delete($banner->image_path);
-            }
-            $path = $request->file('image')->store('banners', 'public');
-            $banner->image_path = $path;
-        }
+        $banner->image_id = $validated['image_id'];
 
         $banner->save();
         return back()->with('success', 'Banner updated');
